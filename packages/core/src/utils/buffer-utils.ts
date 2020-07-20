@@ -66,6 +66,9 @@ export class BufferUtils {
 		return result.buffer;
 	}
 
+	static encodeBufferToBase64(buffer: ArrayBuffer): string {
+		return Buffer.from(buffer).toString('base64');
+	}
 	/**
 	* Pads an ArrayBuffer to the next 4-byte boundary.
 	*

@@ -125,9 +125,9 @@ class NodeIO extends PlatformIO {
 	}
 
 	/** Writes a {@link Document} instance to a local path. */
-	public write (uri: string, doc: Document): void {
+	public write (uri: string, doc: Document, embedded: boolean = false): void {
 		const isGLB = !!uri.match(/\.glb$/);
-		isGLB ? this.writeGLB(uri, doc) : this.writeGLTF(uri, doc);
+		isGLB ? this.writeGLB(uri, doc) : this.writeGLTF(uri, doc, embedded);
 	}
 
 	/* Internal. */
@@ -150,7 +150,7 @@ class NodeIO extends PlatformIO {
 			if (resource.uri && !resource.uri.match(/data:/)) {
 				const absURI = this.path.resolve(dir, resource.uri);
 				nativeDoc.resources[resource.uri] = BufferUtils.trim(this.fs.readFileSync(absURI));
-			} else {
+			} else if (resource.uri) {
 				// Rewrite Data URIs to something short and unique.
 				const resourceUUID = `__${uuid()}.${FileUtils.extension(resource.uri)}`;
 				nativeDoc.resources[resourceUUID] = BufferUtils.createBufferFromDataURI(resource.uri);
@@ -160,8 +160,8 @@ class NodeIO extends PlatformIO {
 		return GLTFReader.read(nativeDoc);
 	}
 
-	private writeGLTF (uri: string, doc: Document): void {
-		const writerOptions = {basename: FileUtils.basename(uri), isGLB: false};
+	private writeGLTF (uri: string, doc: Document, embedded: boolean = false): void {
+		const writerOptions = {basename: FileUtils.basename(uri), isGLB: false, embedded};
 		const {json, resources} = GLTFWriter.write(doc, writerOptions);
 		const {fs, path} = this;
 		const dir = path.dirname(uri);

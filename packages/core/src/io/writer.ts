@@ -15,6 +15,7 @@ const BufferViewTarget = {
 export interface WriterOptions {
 	basename: string;
 	isGLB: boolean;
+	embedded?: boolean;
 }
 
 /** @hidden */
@@ -248,7 +249,7 @@ export class GLTFWriter {
 				imageDef.mimeType = texture.getMimeType() as GLTF.ImageMimeType;
 			}
 
-			if (options.isGLB) {
+			if (options.isGLB || options.embedded) {
 				imageData.push(texture.getImage());
 				imageDef.bufferView = json.bufferViews.length;
 				json.bufferViews.push({
@@ -266,6 +267,15 @@ export class GLTFWriter {
 			return imageDef;
 		});
 
+		function arrayBufferToBase64(buffer) {
+			var binary = '';
+			var bytes = new Uint8Array(buffer);
+			var len = bytes.byteLength;
+			for (var i = 0; i < len; i++) {
+				  binary += String.fromCharCode(bytes[i]);
+			}
+			return btoa(binary);
+   		}
 		/* Buffers, buffer views, and accessors. */
 
 		json.buffers = [];
@@ -364,6 +374,7 @@ export class GLTFWriter {
 			// Assign buffer URI.
 
 			let uri: string;
+			
 			if (options.isGLB) {
 				uri = GLB_BUFFER;
 			} else {
@@ -374,7 +385,13 @@ export class GLTFWriter {
 			// Write buffer views to buffer.
 
 			bufferDef.byteLength = bufferByteLength;
-			nativeDoc.resources[uri] = BufferUtils.concat(buffers);
+			if (options.embedded) {
+				bufferDef.uri = 'data:application/octet-stream;base64,' 
+					+ BufferUtils.encodeBufferToBase64(BufferUtils.concat(buffers));
+			} else {
+				nativeDoc.resources[uri] = BufferUtils.concat(buffers);
+			}
+			
 
 			json.buffers.push(bufferDef);
 		});
